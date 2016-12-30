@@ -13,8 +13,12 @@ At the end of the day, DAGMan is used to run a set of executables with various o
 
 So the first component is the `CondorJob` class. This is an object that simply has two members, a name and a path to the job executable file.
 
-![CondorJob layout](images/condorjob.pdf "CondorJob layout")
+![CondorJob layout](images/condorjob.png "CondorJob layout")
 
 The next component is the `CondorJobSeries` class. This is an object that encapsulates the various arguments you would like to pass to an executable and any dependencies that there might be with other jobs.
 
+![CondorJobSeries layout](images/condorjobseries.png "CondorJobSeries layout")
+
 The final component is the `DagManager` class. This is effectively just a container for the `CondorJobSeries` that are going into a DAG submission file.
+
+![DagManager layout](images/dagmanager.png "DagManager layout")
