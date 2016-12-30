@@ -134,10 +134,9 @@ class CondorJobSeries(object):
 
 class DagManager(object):
 
-    def __init__(self, name=None, username=getpass.getuser(),
+    def __init__(self, name=None,
                  condor_data_dir=None, condor_scratch_dir=None):
         self.name = name
-        self.username = username
         self.condor_data_dir = condor_data_dir
         self.condor_scratch_dir = condor_scratch_dir
         self.jobseries_list = []
