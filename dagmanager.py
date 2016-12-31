@@ -208,7 +208,7 @@ class DagManager(object):
         jobID += '_{:02d}'.format(len(othersubmits) + 1)
         return jobID
 
-    def build(self):
+    def build(self, verbose=True):
         # Get set of CondorExecutable and write the corresponding submit scripts
         executable_set = self.__get_executables()
         for executable in executable_set:
@@ -221,8 +221,13 @@ class DagManager(object):
         self.submit_file = dag_file
 
         # Write dag submit file
+        if verbose:
+            print('Building DAG submission file {}...'.format(self.submit_file))
         with open(dag_file, 'w') as dag:
-            for job in self:
+            for job_index, job in enumerate(self):
+                if verbose:
+                    print('\tWorking on CondorJob {} [{} of {}]'.format(
+                        job.name, job_index + 1, len(self.job_list)))
                 for i, arg in enumerate(job):
                     dag.write('JOB {}_p{} '.format(job.name, i) +
                               job.condorexecutable.submit_file + '\n')
@@ -238,6 +243,8 @@ class DagManager(object):
                     for k, arg in enumerate(job):
                         child_string += ' {}_p{}'.format(job.name, k)
                     dag.write(parent_string + ' ' + child_string + '\n')
+        if verbose:
+            print('DAG submission file successfully built!')
 
         return
 
@@ -246,7 +253,7 @@ class DagManager(object):
             'condor_submit_dag -maxjobs {} {}'.format(maxjobs, self.submit_file))
         return
 
-    def build_submit(self, maxjobs=3000):
-        self.build()
+    def build_submit(self, maxjobs=3000, verbose=True):
+        self.build(verbose)
         self.submit(maxjobs)
         return

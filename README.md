@@ -40,13 +40,13 @@ merge.add_arg('--overwrite')
 merge.add_parent(process)
 
 # Finally create a DagManager, add all the CondorJobs, build DAGMan submission file and submit!
-dagmanager = dagmanager.DagManager(name='process_and_merge',
+dag_manager = dagmanager.DagManager(name='process_and_merge',
                                condor_data_dir='/data/user/condor',
                                condor_scratch_dir='/scratch/user/condor')
 
-dagmanager.add_job(process)
-dagmanager.add_job(merge)
-dagmanager.build_submit()
+dag_manager.add_job(process)
+dag_manager.add_job(merge)
+dag_manager.build_submit()
 
 ```
 
