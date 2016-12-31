@@ -4,7 +4,7 @@ The Directed Acyclic Graph Manager (DAGMan) is an extremely useful tool for subm
 
 However, when the number of jobs becomes large, especially when there are inter-job dependencies, actually making a DAG submission file can become a pain. This project is an attempt to create complex DAG submission files in a straight-forward manner.
 
-## Core components
+## Overview
 
 At the end of the day, DAGMan is used to run a set of executables with various options. In addition, there might even be some inter-job dependencies (e.g. you want job A to finish before job B begins).
 
@@ -51,3 +51,8 @@ dagmanager.build_submit()
 ```
 
 All the necessary submit files will be written and the DAGMan submission file will be submitted to Condor. It's that easy!
+
+
+## Installation
+
+To get dagmanager, just clone the repository via `git clone https://github.com/jrbourbeau/dagmanager.git`. Make sure to add the path to the dagmanager repository to your system's `PYTHONPATH`.
