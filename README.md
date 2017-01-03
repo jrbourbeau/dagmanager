@@ -8,7 +8,7 @@ In my everyday work, I rely heavily on DAGMan. However, I’ve found when the nu
 
 At the end of the day, DAGMan is used to run a set of executables with various options. Additionally, there might be some inter-job dependencies you want to specify (e.g. you want job A to finish before job B begins).
 
-So the first necessary component is the **CondorExecutable** class. This is an object that simply has two data members, a name and a path to the corresponding executable file.
+So the first necessary component is the **CondorExecutable** class. This is an object that has a name, a path to the corresponding executable file, and any memory/disk request for HTCondor.
 
 The next component is the **CondorJob** class. This object encapsulates the various arguments you would like to pass to an executable and any dependencies that there might be with other jobs (e.g. parent/child relationships).
 
@@ -24,6 +24,8 @@ Name | Type  |                             Description
 ---- | :---: | --------------------------------------:
 name | `str` | Name of the `CondorExecutable` instance
 path | `str` |        Path to corresponding executable
+request_memory | `str` |  Memory request to be included in HTCondor ClassAd
+request_disk | `str` |  Disk request to be included in HTCondor ClassAd
 
 ### `CondorJob`
 
@@ -82,7 +84,7 @@ Below is a a quick example of how to implement the above process using dagmanage
 import dagmanager
 
 # Specify the executables that will be run
-process_ex = dagmanager.CondorExecutable(name='process', path='/path/to/process.py')
+process_ex = dagmanager.CondorExecutable(name='process', path='/path/to/process.py', request_memory='5GB')
 merge_ex = dagmanager.CondorExecutable(name='merge', path='/path/to/merge.py')
 
 # Specify the CondorJobs arguments and any dependencies

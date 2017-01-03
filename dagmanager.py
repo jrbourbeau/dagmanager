@@ -20,9 +20,12 @@ def checkdir(outfile):
 
 class CondorExecutable(object):
 
-    def __init__(self, name=None, path=None):
+    def __init__(self, name=None, path=None, request_memory=None,
+                request_disk=None):
         self.name = name
         self.path = path
+        self.request_memory = request_memory
+        self.request_disk = request_disk
 
     def __str__(self):
         output = 'CondorExecutable(name={}, path={})'.format(
@@ -192,6 +195,12 @@ class DagManager(object):
                      self.condor_data_dir, jobID),
                  'notification = Never\n',
                  'queue \n']
+
+        # Add memory and disk requests, if specified
+        if executable.request_memory:
+            lines.insert(-2, 'request_memory = {}\n'.format(executable.request_memory))
+        if executable.request_disk:
+            lines.insert(-2, 'request_disk = {}\n'.format(executable.request_disk))
 
         with open(condor_script, 'w') as f:
             f.writelines(lines)
