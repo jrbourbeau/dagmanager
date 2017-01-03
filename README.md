@@ -1,8 +1,8 @@
 # HTCondor DAGMan management
 
-The Directed Acyclic Graph Manager (DAGMan) is an extremely useful tool for submitting and managing a high voume of [HTCondor](https://research.cs.wisc.edu/htcondor/) jobs. However, when the number of jobs becomes large, especially when there are inter-job dependencies, actually making the DAGMan submission file can become a pain.
+[HTCondor](https://research.cs.wisc.edu/htcondor/) is a an open-source framework for high throughput computing developed at the University of Wisconsin–Madison. One of the most useful features of HTCondor is the Directed Acyclic Graph Manager (DAGMan), a tool for submitting and managing a high volume of interrelated jobs.
 
-This project helps build and submit complex DAGMan submission files in a straight-forward manner.
+In my everyday work, I rely heavily on DAGMan. However, I’ve found when the number of jobs becomes large, actually making the DAGMan submission file can become a pain. This issue prompted me to make dagmanager, a tool that helps build and submit complex DAGMan submission files in a straight-forward manner with minimal hassle.
 
 ## Project overview
 
@@ -33,20 +33,20 @@ Name             |        Type        |                                         
 ---------------- | :----------------: | -------------------------------------------------------------------:
 name             |       `str`        |                                     Name of the `CondorJob` instance
 condorexecutable | `CondorExecutable` | `CondorExecutable` instance that list of arguments will be passed to
-arg_list         |    `list[str]`     |                   List of arguments to be passed to condorexecutable
-parent_list      | `list[CondorJob]`  |                                                  List of parent jobs
-child_list       | `list[CondorJob]`  |                                                   List of child jobs
+args         |    `list[str]`     |                   List of arguments to be passed to condorexecutable
+parents      | `list[CondorJob]`  |                                                  List of parent jobs
+children       | `list[CondorJob]`  |                                                   List of child jobs
 
 Methods:
 
 Name         |   Argument type   |                                       Description
 ------------ | :---------------: | ------------------------------------------------:
-add_arg      |       `str`       |                       Argument to add to arg_list
-add_agrs     |      `list`       |              List of arguments to add to arg_list
-add_parent   |    `CondorJob`    |          Adds `CondorJob` instance to parent_list
-add_parents  | `list[CondorJob]` | Adds list of `CondorJob` instances to parent_list
-add_child    |    `CondorJob`    |           Adds `CondorJob` instance to child_list
-add_children | `list[CondorJob]` |  Adds list of `CondorJob` instances to child_list
+add_arg      |       `str`       |                       Argument to add to args
+add_agrs     |      `list`       |              List of arguments to add to args
+add_parent   |    `CondorJob`    |          Adds `CondorJob` instance to parents
+add_parents  | `list[CondorJob]` | Adds list of `CondorJob` instances to parents
+add_child    |    `CondorJob`    |           Adds `CondorJob` instance to children
+add_children | `list[CondorJob]` |  Adds list of `CondorJob` instances to children
 
 #### `DagManager`
 
@@ -55,16 +55,16 @@ Members:
 Name | Type  |   Description
 ---- | :---: | --------------------------------------:
 name | `str` | Name of the `DagManager` instance
-job_list | `list[CondorJob]` |   List of `CondorJob`s to include in DagMan submission file
+jobs | `list[CondorJob]` |   List of `CondorJob`s to include in DagMan submission file
 
 Methods:
 
 Name | Argument type  |    Description
 ---- | :---: | --------------------------------------:
-add_job | `CondorJob` | Adds `DagManager` instance to job_list
+add_job | `CondorJob` | Adds `DagManager` instance to jobs
 build | `bool` | Builds all the necessary submission files. Has verbose option (`True` by default)
-submit | `int` | Submits DAGMan file to Condor. Has maximum running jobs number option (default is `3000`)
-build_submit | `int`, `bool` | Calls build and submit methods in sequence
+submit() | `int`, `dict` | Submits DAGMan file to Condor. Has maximum running jobs number option (default is `3000`) and a kwargs dictionary for all other submit options
+build_submit | `int`, `bool`, `dict` | Calls build and submit methods in sequence
 
 
 

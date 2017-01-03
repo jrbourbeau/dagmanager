@@ -35,26 +35,26 @@ class CondorJob(object):
     def __init__(self, name=None, condorexecutable=None):
         self.name = name
         self.condorexecutable = condorexecutable
-        self.arg_list = []
-        self.parent_list = []
-        self.child_list = []
+        self.args = []
+        self.parents = []
+        self.children = []
 
     def __str__(self):
         output = 'CondorJob(name={}, condorexecutable={}, n_args={}, n_children={}, n_parents={})'.format(
-            self.name, self.condorexecutable.name, len(self.arg_list),
-            len(self.child_list), len(self.parent_list))
+            self.name, self.condorexecutable.name, len(self.args),
+            len(self.children), len(self.parents))
         return output
 
     def __iter__(self):
-        return iter(self.arg_list)
+        return iter(self.args)
 
     def add_arg(self, arg):
-        self.arg_list.append(str(arg))
+        self.args.append(str(arg))
         return
 
-    def add_args(self, arg_list):
+    def add_args(self, args):
         try:
-            for arg in arg_list:
+            for arg in args:
                 self.add_arg(arg)
         except:
             raise('add_args() is expecting a list of argument strings')
@@ -62,7 +62,7 @@ class CondorJob(object):
         return
 
     def __hasparent(self, job):
-        return job in self.parent_list
+        return job in self.parents
 
     def add_parent(self, job):
 
@@ -70,12 +70,12 @@ class CondorJob(object):
         if not isinstance(job, CondorJob):
             raise TypeError('add_parent() is expecting a CondorJob')
 
-        # Don't bother continuing if job is already in the parent_list
+        # Don't bother continuing if job is already in the parents
         if self.__hasparent(job):
             return
 
-        # Add job to existing parent_list
-        self.parent_list.append(job)
+        # Add job to existing parents
+        self.parents.append(job)
         # Add this CondorJob instance as a child to the new parent job
         job.add_child(self)
 
@@ -93,7 +93,7 @@ class CondorJob(object):
         return
 
     def __haschild(self, job):
-        return job in self.child_list
+        return job in self.children
 
     def add_child(self, job):
 
@@ -101,12 +101,12 @@ class CondorJob(object):
         if not isinstance(job, CondorJob):
             raise TypeError('add_child() is expecting a CondorJob')
 
-        # Don't bother continuing if job is already in the child_list
+        # Don't bother continuing if job is already in the children
         if self.__haschild(job):
             return
 
-        # Add job to existing child_list
-        self.child_list.append(job)
+        # Add job to existing children
+        self.children.append(job)
         # Add this CondorJob instance as a parent to the new child job
         job.add_parent(self)
 
@@ -124,10 +124,10 @@ class CondorJob(object):
         return
 
     def haschildren(self):
-        return bool(self.child_list)
+        return bool(self.children)
 
     def hasparents(self):
-        return bool(self.parent_list)
+        return bool(self.parents)
 
 
 class DagManager(object):
@@ -137,32 +137,32 @@ class DagManager(object):
         self.name = name
         self.condor_data_dir = condor_data_dir
         self.condor_scratch_dir = condor_scratch_dir
-        self.job_list = []
+        self.jobs = []
 
     def __str__(self):
         output = 'DagManager(name={}, n_jobs={})'.format(self.name,
-                                                         len(self.job_list))
+                                                         len(self.jobs))
         return output
 
     def __iter__(self):
-        return iter(self.job_list)
+        return iter(self.jobs)
 
     def __hasjob(self, job):
-        return job in self.job_list
+        return job in self.jobs
 
     def add_job(self, job):
-        # Don't bother adding job if it's already in the job_list
+        # Don't bother adding job if it's already in the jobs list
         if self.__hasjob(job):
             return
         if isinstance(job, CondorJob):
-            self.job_list.append(job)
+            self.jobs.append(job)
         else:
             raise TypeError('add_job() is expecting a CondorJob')
 
         return
 
     def __get_executables(self):
-        executable_list = [job.condorexecutable for job in self.job_list]
+        executable_list = [job.condorexecutable for job in self.jobs]
         executable_set = set(executable_list)
         return executable_set
 
@@ -227,7 +227,7 @@ class DagManager(object):
             for job_index, job in enumerate(self):
                 if verbose:
                     print('\tWorking on CondorJob {} [{} of {}]'.format(
-                        job.name, job_index + 1, len(self.job_list)))
+                        job.name, job_index + 1, len(self.jobs)))
                 for i, arg in enumerate(job):
                     dag.write('JOB {}_p{} '.format(job.name, i) +
                               job.condorexecutable.submit_file + '\n')
@@ -236,7 +236,7 @@ class DagManager(object):
                 # Add parent/child information if necessary
                 if job.hasparents():
                     parent_string = 'Parent'
-                    for parentjob in job.parent_list:
+                    for parentjob in job.parents:
                         for j, parentarg in enumerate(parentjob):
                             parent_string += ' {}_p{}'.format(parentjob.name, j)
                     child_string = 'Child'
@@ -248,12 +248,14 @@ class DagManager(object):
 
         return
 
-    def submit(self, maxjobs=3000):
-        os.system(
-            'condor_submit_dag -maxjobs {} {}'.format(maxjobs, self.submit_file))
+    def submit(self, maxjobs=3000, **kwargs):
+        command = 'condor_submit_dag -maxjobs {} {}'.format(maxjobs, self.submit_file)
+        for option, value in kwargs.iteritems():
+            command += ' {} {}'.format(option, value)
+        os.system(command)
         return
 
-    def build_submit(self, maxjobs=3000, verbose=True):
+    def build_submit(self, maxjobs=3000, verbose=True, **kwargs):
         self.build(verbose)
-        self.submit(maxjobs)
+        self.submit(maxjobs, **kwargs)
         return
