@@ -8,7 +8,7 @@ In my everyday work, I rely heavily on DAGMan. However, I’ve found when the nu
 
 At the end of the day, DAGMan is used to run a set of executables with various options. Additionally, there might be some inter-job dependencies you want to specify (e.g. you want job A to finish before job B begins).
 
-So the first necessary component is the **CondorExecutable** class. This is an object that has a name, a path to the corresponding executable file, and any memory/disk request for HTCondor.
+So the first necessary component is the **CondorExecutable** class. This is an object that has a name, a path to the corresponding executable file, any memory/disk/queue request for HTCondor, and any additional lines you would like to add to the submit file for this executable.
 
 The next component is the **CondorJob** class. This object encapsulates the various arguments you would like to pass to an executable and any dependencies that there might be with other jobs (e.g. parent/child relationships).
 
@@ -26,6 +26,16 @@ name | `str` | Name of the `CondorExecutable` instance
 path | `str` |        Path to corresponding executable
 request_memory | `str` |  Memory request to be included in HTCondor ClassAd
 request_disk | `str` |  Disk request to be included in HTCondor ClassAd
+queue | `int` |  Queue option for HTCondor submit file
+lines | `list` |  List of custom lines to be added to HTCondor submit file
+
+Methods:
+
+Name         |   Argument type   |                                       Description
+------------ | :---------------: | ------------------------------------------------:
+add_line      |       `str`       |                       Add line to lines attribute
+add_lines     |      `list`       |              Add list of lines to lines attribute
+
 
 ### `CondorJob`
 
@@ -65,7 +75,7 @@ Name | Argument type  |    Description
 ---- | :---: | --------------------------------------:
 add_job | `CondorJob` | Adds `DagManager` instance to jobs
 build | `bool` | Builds all the necessary submission files. Has verbose option (`True` by default)
-submit() | `int`, `dict` | Submits DAGMan file to Condor. Has maximum running jobs number option (default is `3000`) and a kwargs dictionary for all other submit options
+submit | `int`, `dict` | Submits DAGMan file to Condor. Has maximum running jobs number option (default is `3000`) and a kwargs dictionary for all other submit options
 build_submit | `int`, `bool`, `dict` | Calls build and submit methods in sequence
 
 

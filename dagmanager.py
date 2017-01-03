@@ -21,16 +21,35 @@ def checkdir(outfile):
 class CondorExecutable(object):
 
     def __init__(self, name=None, path=None, request_memory=None,
-                request_disk=None):
+                request_disk=None, queue=None, lines=[]):
         self.name = name
         self.path = path
         self.request_memory = request_memory
         self.request_disk = request_disk
+        self.queue = queue
+        if isinstance(lines, str):
+            lines = [lines]
+        self.lines = lines
 
     def __str__(self):
-        output = 'CondorExecutable(name={}, path={})'.format(
-            self.name, self.path)
+        output = 'CondorExecutable(name={}, path={}, request_memory={}, request_disk={}, n_lines={})'.format(
+            self.name, self.path, self.request_memory, self.request_disk, len(self.lines))
         return output
+
+    def add_line(self, line):
+        self.lines.append(str(line))
+        return
+
+    def add_lines(self, lines):
+        if isinstance(lines, str):
+            lines = [lines]
+        try:
+            for line in lines:
+                self.add_line(line)
+        except:
+            raise('add_lines() is expecting a list of strings')
+
+        return
 
 
 class CondorJob(object):
@@ -196,11 +215,30 @@ class DagManager(object):
                  'notification = Never\n',
                  'queue \n']
 
+        # Re-format lines if queue option specified
+        if executable.queue:
+            if not isinstance(executable.queue, int):
+                raise TypeError('The queue option for CondorExecutable {} is {}, expecting an int'.format(executable.name, executable.queue))
+            lines[-1] = 'queue {}\n'.format(executable.queue)
+            lines[4:7] = ['log = {}/logs/{}_$(Process).log\n'.format(self.condor_scratch_dir, jobID),
+                          'output = {}/outs/{}_$(Process).out\n'.format(self.condor_data_dir, jobID),
+                          'error = {}/errors/{}_$(Process).error\n'.format(self.condor_data_dir, jobID)]
+
         # Add memory and disk requests, if specified
         if executable.request_memory:
             lines.insert(-2, 'request_memory = {}\n'.format(executable.request_memory))
         if executable.request_disk:
             lines.insert(-2, 'request_disk = {}\n'.format(executable.request_disk))
+
+        # Add any extra lines to submit file, if specified
+        if executable.lines:
+            if isinstance(executable.lines, str):
+                lines.insert(-2, executable.lines + '\n')
+            elif isinstance(executable.lines, list):
+                for line in executable.lines:
+                    lines.insert(-2, line + '\n')
+            else:
+                raise TypeError('The lines option for CondorExecutable {} is of type {}, expecting str or list'.format(executable.name, type(executable.lines)))
 
         with open(condor_script, 'w') as f:
             f.writelines(lines)
