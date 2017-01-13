@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import glob
 import time
-import getpass
+from . import logger
 
 
 def checkdir(outfile):
@@ -20,24 +19,32 @@ def checkdir(outfile):
 
 class CondorExecutable(object):
 
-    def __init__(self, name=None, path=None, request_memory=None,
-                request_disk=None, queue=None, lines=[]):
-        self.name = name
-        self.path = path
+    def __init__(self, name, path, request_memory=None,
+                 request_disk=None, queue=None, lines=None, verbose=0):
+
+        self.name = str(name)
+        self.path = str(path)
         self.request_memory = request_memory
         self.request_disk = request_disk
         self.queue = queue
+        if lines is None:
+            lines = []
         if isinstance(lines, str):
             lines = [lines]
         self.lines = lines
 
-    def __str__(self):
+        # Set up logger
+        self.logger = logger.setup_logger(self, verbose)
+
+    def __repr__(self):
         output = 'CondorExecutable(name={}, path={}, request_memory={}, request_disk={}, n_lines={})'.format(
             self.name, self.path, self.request_memory, self.request_disk, len(self.lines))
         return output
 
     def add_line(self, line):
         self.lines.append(str(line))
+        self.logger.debug(
+            'Added \'{}\' to lines for CondorExecutable {}'.format(str(line), self.name))
         return
 
     def add_lines(self, lines):
@@ -47,21 +54,25 @@ class CondorExecutable(object):
             for line in lines:
                 self.add_line(line)
         except:
-            raise('add_lines() is expecting a list of strings')
+            raise TypeError('add_lines() is expecting a list of strings')
 
         return
 
 
 class CondorJob(object):
 
-    def __init__(self, name=None, condorexecutable=None):
-        self.name = name
+    def __init__(self, name, condorexecutable=None, verbose=0):
+
+        self.name = str(name)
         self.condorexecutable = condorexecutable
         self.args = []
         self.parents = []
         self.children = []
 
-    def __str__(self):
+        # Set up logger
+        self.logger = logger.setup_logger(self, verbose)
+
+    def __repr__(self):
         output = 'CondorJob(name={}, condorexecutable={}, n_args={}, n_children={}, n_parents={})'.format(
             self.name, self.condorexecutable.name, len(self.args),
             len(self.children), len(self.parents))
@@ -72,6 +83,8 @@ class CondorJob(object):
 
     def add_arg(self, arg):
         self.args.append(str(arg))
+        self.logger.debug(
+            'Added \'{}\' to args for CondorJob {}'.format(str(arg), self.name))
         return
 
     def add_args(self, args):
@@ -79,7 +92,8 @@ class CondorJob(object):
             for arg in args:
                 self.add_arg(arg)
         except:
-            raise('add_args() is expecting a list of argument strings')
+            raise TypeError(
+                'add_args() is expecting a list of argument strings')
 
         return
 
@@ -98,6 +112,8 @@ class CondorJob(object):
 
         # Add job to existing parents
         self.parents.append(job)
+        self.logger.debug(
+            'Added {} to parents for CondorJob {}'.format(job.name, self.name))
         # Add this CondorJob instance as a child to the new parent job
         job.add_child(self)
 
@@ -110,7 +126,7 @@ class CondorJob(object):
             for job in job_list:
                 self.add_parent(job)
         except:
-            raise('add_parents() is expecting a list of CondorJobs')
+            raise TypeError('add_parents() is expecting a list of CondorJobs')
 
         return
 
@@ -129,6 +145,8 @@ class CondorJob(object):
 
         # Add job to existing children
         self.children.append(job)
+        self.logger.debug(
+            'Added {} to children for CondorJob {}'.format(job.name, self.name))
         # Add this CondorJob instance as a parent to the new child job
         job.add_parent(self)
 
@@ -141,7 +159,7 @@ class CondorJob(object):
             for job in job_list:
                 self.add_child(job)
         except:
-            raise('add_children() is expecting a list of CondorJobs')
+            raise TypeError('add_children() is expecting a list of CondorJobs')
 
         return
 
@@ -154,14 +172,18 @@ class CondorJob(object):
 
 class DagManager(object):
 
-    def __init__(self, name=None,
-                 condor_data_dir=None, condor_scratch_dir=None):
-        self.name = name
+    def __init__(self, name,
+                 condor_data_dir=None, condor_scratch_dir=None, verbose=0):
+
+        self.name = str(name)
         self.condor_data_dir = condor_data_dir
         self.condor_scratch_dir = condor_scratch_dir
         self.jobs = []
 
-    def __str__(self):
+        # Set up logger
+        self.logger = logger.setup_logger(self, verbose)
+
+    def __repr__(self):
         output = 'DagManager(name={}, n_jobs={})'.format(self.name,
                                                          len(self.jobs))
         return output
@@ -180,6 +202,8 @@ class DagManager(object):
             self.jobs.append(job)
         else:
             raise TypeError('add_job() is expecting a CondorJob')
+        self.logger.debug(
+            'Added {} to jobs for DagManager {}'.format(job.name, self.name))
 
         return
 
@@ -192,7 +216,8 @@ class DagManager(object):
 
         # Check that paths/files exist
         if not os.path.exists(executable.path):
-            raise IOError('The path {} does not exist...'.format(executable.path))
+            raise IOError(
+                'The path {} does not exist...'.format(executable.path))
         for directory in ['submit_scripts', 'logs']:
             checkdir(self.condor_scratch_dir + '/{}/'.format(directory))
         for directory in ['outs', 'errors']:
@@ -218,10 +243,12 @@ class DagManager(object):
         # Re-format lines if queue option specified
         if executable.queue:
             if not isinstance(executable.queue, int):
-                raise TypeError('The queue option for CondorExecutable {} is {}, expecting an int'.format(executable.name, executable.queue))
+                raise TypeError('The queue option for CondorExecutable {} is {}, expecting an int'.format(
+                    executable.name, executable.queue))
             lines[-1] = 'queue {}\n'.format(executable.queue)
             lines[4:7] = ['log = {}/logs/{}_$(Process).log\n'.format(self.condor_scratch_dir, jobID),
-                          'output = {}/outs/{}_$(Process).out\n'.format(self.condor_data_dir, jobID),
+                          'output = {}/outs/{}_$(Process).out\n'.format(
+                              self.condor_data_dir, jobID),
                           'error = {}/errors/{}_$(Process).error\n'.format(self.condor_data_dir, jobID)]
 
         # Add memory and disk requests, if specified
@@ -238,7 +265,8 @@ class DagManager(object):
                 for line in executable.lines:
                     lines.insert(-2, line + '\n')
             else:
-                raise TypeError('The lines option for CondorExecutable {} is of type {}, expecting str or list'.format(executable.name, type(executable.lines)))
+                raise TypeError('The lines option for CondorExecutable {} is of type {}, expecting str or list'.format(
+                    executable.name, type(executable.lines)))
 
         with open(condor_script, 'w') as f:
             f.writelines(lines)
@@ -255,8 +283,9 @@ class DagManager(object):
         jobID += '_{:02d}'.format(len(othersubmits) + 1)
         return jobID
 
-    def build(self, verbose=True):
-        # Get set of CondorExecutable and write the corresponding submit scripts
+    def build(self):
+        # Get set of CondorExecutable and write the corresponding submit
+        # scripts
         executable_set = self.__get_executables()
         for executable in executable_set:
             self.__make_submit_script(executable)
@@ -268,13 +297,12 @@ class DagManager(object):
         self.submit_file = dag_file
 
         # Write dag submit file
-        if verbose:
-            print('Building DAG submission file {}...'.format(self.submit_file))
+        self.logger.info(
+            'Building DAG submission file {}...'.format(self.submit_file))
         with open(dag_file, 'w') as dag:
-            for job_index, job in enumerate(self):
-                if verbose:
-                    print('\tWorking on CondorJob {} [{} of {}]'.format(
-                        job.name, job_index + 1, len(self.jobs)))
+            for job_index, job in enumerate(self, start=1):
+                self.logger.info('Working on CondorJob {} [{} of {}]'.format(
+                    job.name, job_index, len(self.jobs)))
                 for i, arg in enumerate(job):
                     dag.write('JOB {}_p{} '.format(job.name, i) +
                               job.condorexecutable.submit_file + '\n')
@@ -285,24 +313,26 @@ class DagManager(object):
                     parent_string = 'Parent'
                     for parentjob in job.parents:
                         for j, parentarg in enumerate(parentjob):
-                            parent_string += ' {}_p{}'.format(parentjob.name, j)
+                            parent_string += ' {}_p{}'.format(
+                                parentjob.name, j)
                     child_string = 'Child'
                     for k, arg in enumerate(job):
                         child_string += ' {}_p{}'.format(job.name, k)
                     dag.write(parent_string + ' ' + child_string + '\n')
-        if verbose:
-            print('DAG submission file successfully built!')
+
+        self.logger.info('DAG submission file successfully built!')
 
         return
 
     def submit(self, maxjobs=3000, **kwargs):
-        command = 'condor_submit_dag -maxjobs {} {}'.format(maxjobs, self.submit_file)
+        command = 'condor_submit_dag -maxjobs {} {}'.format(
+            maxjobs, self.submit_file)
         for option, value in kwargs.iteritems():
             command += ' {} {}'.format(option, value)
         os.system(command)
         return
 
-    def build_submit(self, maxjobs=3000, verbose=True, **kwargs):
-        self.build(verbose)
+    def build_submit(self, maxjobs=3000, **kwargs):
+        self.build()
         self.submit(maxjobs, **kwargs)
         return

@@ -74,9 +74,9 @@ Methods:
 Name | Argument type  |    Description
 ---- | :---: | --------------------------------------:
 add_job | `CondorJob` | Adds `DagManager` instance to jobs
-build | `bool` | Builds all the necessary submission files. Has verbose option (`True` by default)
+build | None | Builds all the necessary submission files.
 submit | `int`, `dict` | Submits DAGMan file to Condor. Has maximum running jobs number option (default is `3000`) and a kwargs dictionary for all other submit options
-build_submit | `int`, `bool`, `dict` | Calls build and submit methods in sequence
+build_submit | `int`, `dict` | Calls build and submit methods in sequence
 
 
 
@@ -91,23 +91,23 @@ Often I find myself using DAGMan to processes several of files, say `file1.i3, f
 Below is a a quick example of how to implement the above process using dagmanager.
 
 ```python
-import dagmanager
+import dagmanager as dm
 
 # Specify the executables that will be run
-process_ex = dagmanager.CondorExecutable(name='process', path='/path/to/process.py', request_memory='5GB')
-merge_ex = dagmanager.CondorExecutable(name='merge', path='/path/to/merge.py')
+process_ex = dm.CondorExecutable(name='process', path='/path/to/process.py', request_memory='5GB')
+merge_ex = dm.CondorExecutable(name='merge', path='/path/to/merge.py')
 
 # Specify the CondorJobs arguments and any dependencies
-process = dagmanager.CondorJob(name='process', condorexecutable=process_ex)
+process = dm.CondorJob(name='process', condorexecutable=process_ex)
 process.add_arg('--input file1.i3 --output outputfile1.hdf5')
 process.add_arg('--input file2.i3 --output outputfile2.hdf5')
-merge = dagmanager.CondorJob(name='merge', condorexecutable=merge_ex)
+merge = dm.CondorJob(name='merge', condorexecutable=merge_ex)
 merge.add_arg('--overwrite')
 # Make sure process job completes before merge begins
 merge.add_parent(process)
 
 # Finally create a DagManager, add all the CondorJobs, build DAGMan submission file and submit!
-dag_manager = dagmanager.DagManager(name='process_and_merge',
+dag_manager = dm.DagManager(name='process_and_merge',
                                condor_data_dir='/data/user/condor',
                                condor_scratch_dir='/scratch/user/condor')
 
@@ -124,4 +124,4 @@ To get dagmanager, just clone the repository via
 
 `git clone https://github.com/jrbourbeau/dagmanager.git`
 
-Make sure to add the path to the dagmanager repository to your system's `PYTHONPATH`.
+Make sure the path to the dagmanager repository to your system's `PYTHONPATH`.
