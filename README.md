@@ -28,6 +28,7 @@ request_memory | `str` |  Memory request to be included in HTCondor ClassAd
 request_disk | `str` |  Disk request to be included in HTCondor ClassAd
 queue | `int` |  Queue option for HTCondor submit file
 lines | `list` |  List of custom lines to be added to HTCondor submit file
+verbose | `int` | Verbosity level (0, 1, 2 &mdash; 0 is least verbose, 2 is most verbose)
 
 Methods:
 
@@ -48,6 +49,7 @@ condorexecutable | `CondorExecutable` | `CondorExecutable` instance that list of
 args         |    `list[str]`     |                   List of arguments to be passed to condorexecutable
 parents      | `list[CondorJob]`  |                                                  List of parent jobs
 children       | `list[CondorJob]`  |                                                   List of child jobs
+verbose | `int` | Verbosity level (0, 1, 2 &mdash; 0 is least verbose, 2 is most verbose)
 
 Methods:
 
@@ -68,6 +70,8 @@ Name | Type  |   Description
 ---- | :---: | --------------------------------------:
 name | `str` | Name of the `DagManager` instance
 jobs | `list[CondorJob]` |   List of `CondorJob`s to include in DagMan submission file
+verbose | `int` | Verbosity level (0, 1, 2 &mdash; 0 is least verbose, 2 is most verbose)
+
 
 Methods:
 
