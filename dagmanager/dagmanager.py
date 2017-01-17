@@ -97,7 +97,7 @@ class CondorJob(object):
 
         return
 
-    def __hasparent(self, job):
+    def _hasparent(self, job):
         return job in self.parents
 
     def add_parent(self, job):
@@ -107,7 +107,7 @@ class CondorJob(object):
             raise TypeError('add_parent() is expecting a CondorJob')
 
         # Don't bother continuing if job is already in the parents
-        if self.__hasparent(job):
+        if self._hasparent(job):
             return
 
         # Add job to existing parents
@@ -130,7 +130,7 @@ class CondorJob(object):
 
         return
 
-    def __haschild(self, job):
+    def _haschild(self, job):
         return job in self.children
 
     def add_child(self, job):
@@ -140,7 +140,7 @@ class CondorJob(object):
             raise TypeError('add_child() is expecting a CondorJob')
 
         # Don't bother continuing if job is already in the children
-        if self.__haschild(job):
+        if self._haschild(job):
             return
 
         # Add job to existing children
@@ -191,12 +191,12 @@ class DagManager(object):
     def __iter__(self):
         return iter(self.jobs)
 
-    def __hasjob(self, job):
+    def _hasjob(self, job):
         return job in self.jobs
 
     def add_job(self, job):
         # Don't bother adding job if it's already in the jobs list
-        if self.__hasjob(job):
+        if self._hasjob(job):
             return
         if isinstance(job, CondorJob):
             self.jobs.append(job)
@@ -207,12 +207,12 @@ class DagManager(object):
 
         return
 
-    def __get_executables(self):
+    def _get_executables(self):
         executable_list = [job.condorexecutable for job in self.jobs]
         executable_set = set(executable_list)
         return executable_set
 
-    def __make_submit_script(self, executable):
+    def _make_submit_script(self, executable):
 
         # Check that paths/files exist
         if not os.path.exists(executable.path):
@@ -223,7 +223,7 @@ class DagManager(object):
         for directory in ['outs', 'errors']:
             checkdir(self.condor_data_dir + '/{}/'.format(directory))
 
-        jobID = self.__getjobID(executable)
+        jobID = self._getjobID(executable)
         condor_script = self.condor_scratch_dir + \
             '/submit_scripts/{}.submit'.format(jobID)
 
@@ -276,7 +276,7 @@ class DagManager(object):
 
         return
 
-    def __getjobID(self, executable):
+    def _getjobID(self, executable):
         jobID = executable.name + time.strftime('_%Y%m%d')
         othersubmits = glob.glob(
             '{}/submit_scripts/{}_??.submit'.format(self.condor_scratch_dir, jobID))
@@ -286,12 +286,12 @@ class DagManager(object):
     def build(self):
         # Get set of CondorExecutable and write the corresponding submit
         # scripts
-        executable_set = self.__get_executables()
+        executable_set = self._get_executables()
         for executable in executable_set:
-            self.__make_submit_script(executable)
+            self._make_submit_script(executable)
 
         # Create DAG submit file path
-        dagID = self.__getjobID(self)
+        dagID = self._getjobID(self)
         dag_file = '{}/submit_scripts/{}.submit'.format(
             self.condor_scratch_dir, dagID)
         self.submit_file = dag_file
