@@ -1,3 +1,7 @@
+
+# WARNING: This project is deprecated. It has been replaced by the [PyCondor project](https://github.com/jrbourbeau/pycondor)
+
+
 # HTCondor DAGMan management
 
 [HTCondor](https://research.cs.wisc.edu/htcondor/) is a an open-source framework for high throughput computing developed at the University of Wisconsin–Madison. One of the most useful features of HTCondor is the Directed Acyclic Graph Manager (DAGMan), a tool for submitting and managing a high volume of interrelated jobs.
